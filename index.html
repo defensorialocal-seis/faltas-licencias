@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Defensoría Civil y Comercial 6 - Registro</title>
+<style>
+  /* Pantalla de login */
+  #loginScreen{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#1e3a8a,#64748b);
+    color:#fff;z-index:1000;text-align:center;padding:20px;
+  }
+  #loginScreen img{max-width:120px;height:auto;margin-bottom:20px}
+  #loginScreen h1{font-size:28px;margin-bottom:6px}
+  #loginScreen h2{font-size:16px;font-weight:400;margin-bottom:24px}
+  #loginBtn{
+    appearance:none;border:none;
+    background:#2563eb;color:#fff;
+    padding:12px 32px;border-radius:12px;
+    cursor:pointer;font-weight:600;font-size:16px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+    transition:background 0.2s;
+  }
+  #loginBtn:hover{background:#1d4ed8}
+
+  /* Estilos generales de la app */
+  :root{--bg:#f9fafc;--card:#fff;--muted:#6b7280;--text:#1e293b;--accent:#1e40af;--line:#e5e7eb;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .container{max-width:1100px;margin:24px auto;padding:0 16px}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1.1fr 1fr}
+  @media(max-width:980px){.cols-2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .title{font-size:20px;font-weight:650;margin:0 0 12px}
+  label{font-size:13px;color:var(--muted);display:block;margin:8px 0 4px}
+  input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#f1f5f9;color:var(--text);outline:none}
+  input[type="color"]{padding:0.25rem;height:40px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{appearance:none;border:none;background:var(--accent);color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:600}
+  .btn.secondary{background:#e2e8f0;color:var(--text);border:1px solid var(--line)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .btn.small{padding:6px 10px;border-radius:10px;font-size:12px}
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .calendar{user-select:none}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .cal-title{font-weight:700;font-size:18px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .dow{font-size:12px;color:var(--muted);text-align:center;padding:4px 0}
+  .cell{background:#f8fafc;border:1px solid var(--line);border-radius:10px;min-height:86px;padding:8px;position:relative;overflow:hidden}
+  .cell .d{font-size:12px;color:var(--muted)}
+  .cell.other{opacity:.45}
+  .cell.today{border-color:var(--accent)}
+  .badge{position:absolute;bottom:6px;left:6px;right:6px;display:flex;gap:4px;flex-wrap:wrap}
+  .dot{width:10px;height:10px;border-radius:999px;border:1px solid #0002}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .legend .item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  th,td{text-align:left;font-size:13px;padding:8px 10px}
+  thead th{color:var(--muted);font-weight:600}
+  tbody tr{background:#f8fafc;border:1px solid var(--line)}
+  tbody tr td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+  tbody tr td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
+  .pill{padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line);color:var(--text);background:#e2e8f0}
+  .footer{margin:24px 0 12px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <!-- Pantalla de Login -->
+  <div id="loginScreen">
+    <img src="https://raw.githubusercontent.com/defensorialocal-seis/faltas-licencias/d9b8439304e121897f9cadc918fae4d38e3f7753/1.png" alt="Logo Defensoría" />
+    <h1>Defensoría Civil y Comercial 6</h1>
+    <h2>Registro de Inasistencias y Licencias</h2>
+    <button id="loginBtn">Ingresar</button>
+  </div>
+
+  <!-- Aplicación -->
+  <div id="app" style="display:none">
+    <div class="container grid cols-2">
+      <!-- Calendario -->
+      <section class="card calendar">
+        <div class="cal-head">
+          <div class="toolbar">
+            <button class="btn small secondary" id="prevBtn">◀</button>
+            <div class="cal-title" id="calTitle">—</div>
+            <button class="btn small secondary" id="nextBtn">▶</button>
+            <select id="monthPicker" class="btn small ghost"></select>
+            <select id="yearPicker" class="btn small ghost"></select>
+          </div>
+          <div class="toolbar">
+            <button class="btn small ghost" id="todayBtn">Hoy</button>
+            <button class="btn small ghost" id="clearFiltersBtn">Quitar filtros</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="dow"></div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <!-- Panel de Registro -->
+      <section class="card">
+        <h2 class="title">Registrar días concedidos</h2>
+        <form id="form" class="grid" autocomplete="off">
+          <div>
+            <label for="nombre">Nombre y apellido</label>
+            <select id="nombre" required>
+              <option value="">-- Seleccionar --</option>
+              <option>Bazante Nadia Romina</option>
+              <option>Boillat Cesar Enrique</option>
+              <option>Cardozo Maria Raquel</option>
+              <option>Cedron Noelia Aurora</option>
+              <option>Corrales Alicia Mariela</option>
+              <option>Escobar Monica Graciela</option>
+              <option>Fioravante Romulo</option>
+              <option>Gonzalez Alberto Misael</option>
+              <option>Gonzalez Juan Jose</option>
+              <option>Gudiño Natalia Esther</option>
+              <option>Magnani Enzo Luciano</option>
+              <option>Pablos Patricia</option>
+              <option>Palacios Ana Gabriela</option>
+              <option>Ortega Lucia Noemi</option>
+              <option>Ramos Marcelo Gustavo</option>
+              <option>Riveros Patricia Soledad</option>
+              <option>Sosa Rita Cecilia</option>
+            </select>
+          </div>
+          <div>
+            <label for="articulo">Artículo del Reglamento</label>
+            <input id="articulo" placeholder="Ej: Art. 311 (Fallecimiento)" required />
+          </div>
+          <div class="row">
+            <div>
+              <label for="dias">Cantidad de días concedidos</label>
+              <input id="dias" type="number" min="1" step="1" required />
+            </div>
+            <div>
+              <label for="inicio">Fecha de inicio</label>
+              <input id="inicio" type="date" required />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="color">Color</label>
+              <input id="color" type="color" value="#1e40af" />
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px">
+              <button class="btn" type="submit" id="saveBtn">Agregar</button>
+              <button class="btn secondary" type="button" id="resetBtn">Limpiar</button>
+            </div>
+          </div>
+          <input type="hidden" id="editingId" />
+        </form>
+
+        <hr style="border:none;border-top:1px solid var(--line);margin:16px 0" />
+
+        <div class="toolbar" style="justify-content:space-between">
+          <input id="search" placeholder="Buscar por nombre o artículo…" style="min-width:240px" />
+          <button class="btn small ghost" id="printBtn">Imprimir</button>
+        </div>
+
+        <div class="table-wrap" style="margin-top:10px;overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Artículo</th>
+                <th>Días</th>
+                <th>Inicio</th>
+                <th>Color</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div class="footer">RPJ 2025 – Registros de inasistencias/licencias. Datos sincronizados en Firebase Realtime Database.</div>
+  </div>
+
+<script>
+/* LOGIN */
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+});
+
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyDDIbbbuorx96B02O-gmZ60oAs7bb7fjfM",
+  authDomain: "defensoria6rpj.firebaseapp.com",
+  projectId: "defensoria6rpj",
+  storageBucket: "defensoria6rpj.firebasestorage.app",
+  messagingSenderId: "388530292853",
+  appId: "1:388530292853:web:3161b40c0f7b1eb01fd03c",
+  databaseURL: "https://defensoria6rpj-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database().ref("registros");
+
+/* STATE */
+let state = {
+  records: [],
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+  filter: ""
+};
+
+/* HELPERS */
+function uuid(){return "id"+Math.random().toString(16).slice(2);}
+function daysInMonth(m,y){return new Date(y,m+1,0).getDate();}
+function firstDay(m,y){return new Date(y,m,1).getDay();}
+
+/* FIREBASE CRUD */
+function upsertRecord(obj){ db.child(obj.id).set(obj); }
+function removeById(id){ db.child(id).remove(); }
+function listenChanges(){
+  db.on("value", snap=>{
+    state.records = Object.values(snap.val()||{});
+    render();
+  });
+}
+listenChanges();
+
+/* FORM HANDLING */
+document.getElementById("form").addEventListener("submit", e=>{
+  e.preventDefault();
+  const id = document.getElementById("editingId").value || uuid();
+  const obj = {
+    id,
+    nombre: document.getElementById("nombre").value,
+    articulo: document.getElementById("articulo").value,
+    dias: parseInt(document.getElementById("dias").value),
+    inicio: document.getElementById("inicio").value,
+    color: document.getElementById("color").value
+  };
+  upsertRecord(obj);
+  e.target.reset();
+  document.getElementById("editingId").value="";
+});
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  document.getElementById("form").reset();
+  document.getElementById("editingId").value="";
+});
+
+/* SEARCH */
+document.getElementById("search").addEventListener("input", e=>{
+  state.filter = e.target.value.toLowerCase();
+  renderTable();
+});
+
+/* PRINT */
+document.getElementById("printBtn").addEventListener("click", ()=>window.print());
+
+/* CALENDAR */
+const dowNames=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+function renderCalendar(){
+  const m=state.currentMonth,y=state.currentYear;
+  document.getElementById("calTitle").textContent=new Intl.DateTimeFormat("es-AR",{month:"long",year:"numeric"}).format(new Date(y,m));
+  document.getElementById("dow").innerHTML=dowNames.map(d=>`<div class="dow">${d}</div>`).join("");
+  const grid=document.getElementById("calGrid");grid.innerHTML="";
+  const fd=firstDay(m,y),dim=daysInMonth(m,y),prevDim=daysInMonth((m-1+12)%12,m==0?y-1:y);
+  let cells=[];for(let i=fd-1;i>=0;i--)cells.push({d:prevDim-i,other:true});
+  for(let d=1;d<=dim;d++)cells.push({d,other:false});
+  while(cells.length%7!==0)cells.push({d:cells.length-dim-fd+1,other:true});
+  const today=new Date();
+  cells.forEach(c=>{
+    const cell=document.createElement("div");
+    cell.className="cell"+(c.other?" other":"");
+    if(!c.other&&c.d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear())cell.classList.add("today");
+    cell.innerHTML=`<div class="d">${c.d}</div><div class="badge"></div>`;
+    if(!c.other){
+      const dateStr=`${y}-${String(m+1).padStart(2,"0")}-${String(c.d).padStart(2,"0")}`;
+      const recs=state.records.filter(r=>{
+        const start=new Date(r.inicio);
+        const end=new Date(start);end.setDate(start.getDate()+r.dias-1);
+        return new Date(dateStr)>=start&&new Date(dateStr)<=end;
+      });
+      recs.forEach(r=>{
+        const dot=document.createElement("div");
+        dot.className="dot";dot.style.background=r.color;
+        cell.querySelector(".badge").appendChild(dot);
+      });
+    }
+    grid.appendChild(cell);
+  });
+  const legend=document.getElementById("legend");legend.innerHTML="";
+  const unique={};state.records.forEach(r=>unique[r.nombre+"_"+r.color]=r);
+  Object.values(unique).forEach(r=>{
+    legend.innerHTML+=`<div class="item"><div class="dot" style="background:${r.color}"></div>${r.nombre}</div>`;
+  });
+}
+
+/* TABLE */
+function renderTable(){
+  const rows=document.getElementById("rows");rows.innerHTML="";
+  let recs=state.records;
+  if(state.filter)recs=recs.filter(r=>r.nombre.toLowerCase().includes(state.filter)||r.articulo.toLowerCase().includes(state.filter));
+  recs.forEach(r=>{
+    rows.innerHTML+=`
+      <tr>
+        <td>${r.nombre}</td>
+        <td>${r.articulo}</td>
+        <td>${r.dias}</td>
+        <td>${r.inicio}</td>
+        <td><div class="dot" style="background:${r.color}"></div></td>
+        <td>
+          <button class="btn small secondary" onclick="editRecord('${r.id}')">Editar</button>
+          <button class="btn small ghost" onclick="removeById('${r.id}')">Eliminar</button>
+        </td>
+      </tr>`;
+  });
+}
+window.editRecord=function(id){
+  const r=state.records.find(x=>x.id===id);if(!r)return;
+  document.getElementById("nombre").value=r.nombre;
+  document.getElementById("articulo").value=r.articulo;
+  document.getElementById("dias").value=r.dias;
+  document.getElementById("inicio").value=r.inicio;
+  document.getElementById("color").value=r.color;
+  document.getElementById("editingId").value=r.id;
+};
+
+/* NAVIGATION */
+document.getElementById("prevBtn").onclick=()=>{state.currentMonth--;if(state.currentMonth<0){state.currentMonth=11;state.currentYear--;}renderCalendar();}
+document.getElementById("nextBtn").onclick=()=>{state.currentMonth++;if(state.currentMonth>11){state.currentMonth=0;state.currentYear++;}renderCalendar();}
+document.getElementById("todayBtn").onclick=()=>{const d=new Date();state.currentMonth=d.getMonth();state.currentYear=d.getFullYear();renderCalendar();}
+document.getElementById("clearFiltersBtn").onclick=()=>{state.filter="";document.getElementById("search").value="";renderTable();}
+
+/* PICKERS */
+const monthPicker=document.getElementById("monthPicker");
+const yearPicker=document.getElementById("yearPicker");
+["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+.forEach((m,i)=>monthPicker.innerHTML+=`<option value="${i}">${m}</option>`);
+for(let y=2020;y<=2030;y++)yearPicker.innerHTML+=`<option value="${y}">${y}</option>`;
+monthPicker.onchange=()=>{state.currentMonth=parseInt(monthPicker.value);renderCalendar();}
+yearPicker.onchange=()=>{state.currentYear=parseInt(yearPicker.value);renderCalendar();}
+
+/* INITIAL RENDER */
+renderCalendar();renderTable();
+</script>
+</body>
+</html>
+
