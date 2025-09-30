@@ -49,6 +49,7 @@
   input[type="color"]{padding:0.25rem;height:40px}
 
   .btn{border:none;background:var(--accent);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:600}
+  .btn:disabled{background:var(--muted);cursor:not-allowed}
   .btn.secondary{background:#e2e8f0;color:var(--text)}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
   .btn.small{padding:6px 10px;border-radius:10px;font-size:12px}
@@ -82,23 +83,18 @@
 
   .footer{margin:24px 0 12px;color:var(--muted);font-size:12px;text-align:center}
 </style>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
-  <!-- Pantalla de Login -->
   <div id="loginScreen">
-    <img src='https://raw.githubusercontent.com/Defensoria6/sistemacausas/6e384b6af0debea9cc5977cf5abaa0fc7c3fe447/6.png' alt="Logo Defensoría" />
     <h1>Defensoría Civil y Comercial 6</h1>
     <h2>Registro de Inasistencias y Licencias</h2>
     <button id="loginBtn">Ingresar</button>
   </div>
 
-  <!-- Aplicación -->
   <div id="app" style="display:none">
     <div class="container grid cols-2">
-      <!-- Calendario -->
       <section class="card calendar">
         <div class="cal-head">
           <div class="toolbar">
@@ -119,7 +115,6 @@
         <div class="legend" id="legend"></div>
       </section>
 
-      <!-- Panel de Registro -->
       <section class="card">
         <h2 class="title">Registrar días concedidos</h2>
         <form id="form" class="grid" autocomplete="off">
@@ -195,6 +190,7 @@
             <tbody id="rows"></tbody>
           </table>
         </div>
+        <div id="paginationControls" style="margin-top:16px;"></div>
       </section>
     </div>
     <div class="footer">RPJ 2025 – Registros sincronizados en Firebase</div>
@@ -227,7 +223,7 @@ firebase.initializeApp({
 const db=firebase.database().ref("registros");
 
 /* STATE */
-let state={records:[],currentMonth:new Date().getMonth(),currentYear:new Date().getFullYear(),filter:""};
+let state={records:[],currentMonth:new Date().getMonth(),currentYear:new Date().getFullYear(),filter:"",currentPage:1,recordsPerPage:10};
 
 /* HELPERS */
 function uuid(){return"id"+Math.random().toString(16).slice(2);}
@@ -238,10 +234,18 @@ function formatDate(d){if(!d)return"";const dt=new Date(d+"T00:00:00");return dt
 /* FIREBASE CRUD */
 function upsertRecord(obj){db.child(obj.id).set(obj);}
 function removeById(id){db.child(id).remove();}
-db.on("value",snap=>{state.records=Object.values(snap.val()||{});render();});
+db.on("value",snap=>{
+  state.records=Object.values(snap.val()||{});
+  // Adjust current page if it becomes invalid after a change (e.g., deletion)
+  let recs=state.records;
+  if(state.filter)recs=recs.filter(r=>r.nombre.toLowerCase().includes(state.filter)||r.articulo.toLowerCase().includes(state.filter));
+  const totalPages=Math.ceil(recs.length/state.recordsPerPage);
+  if(state.currentPage>totalPages){state.currentPage=totalPages||1;}
+  render();
+});
 
 /* RENDER */
-function render(){renderCalendar();renderTable();}
+function render(){renderCalendar();renderTable();renderPagination();}
 
 /* FORM */
 document.getElementById("form").addEventListener("submit",e=>{
@@ -252,7 +256,7 @@ document.getElementById("form").addEventListener("submit",e=>{
     nombre:document.getElementById("nombre").value,
     articulo:document.getElementById("articulo").value,
     dias:parseInt(document.getElementById("dias").value),
-    inicio:document.getElementById("inicio").value, // guardamos YYYY-MM-DD
+    inicio:document.getElementById("inicio").value,
     color:document.getElementById("color").value
   };
   upsertRecord(obj);
@@ -261,7 +265,12 @@ document.getElementById("form").addEventListener("submit",e=>{
 document.getElementById("resetBtn").onclick=()=>{document.getElementById("form").reset();document.getElementById("editingId").value="";};
 
 /* SEARCH */
-document.getElementById("search").oninput=e=>{state.filter=e.target.value.toLowerCase();renderTable();};
+document.getElementById("search").oninput=e=>{
+  state.filter=e.target.value.toLowerCase();
+  state.currentPage=1;
+  renderTable();
+  renderPagination();
+};
 
 /* PRINT */
 document.getElementById("printBtn").onclick=()=>window.print();
@@ -306,12 +315,16 @@ function renderCalendar(){
   });
 }
 
-/* TABLE */
+/* TABLE & PAGINATION */
 function renderTable(){
   const rows=document.getElementById("rows");rows.innerHTML="";
   let recs=state.records;
   if(state.filter)recs=recs.filter(r=>r.nombre.toLowerCase().includes(state.filter)||r.articulo.toLowerCase().includes(state.filter));
-  recs.forEach(r=>{
+  
+  const startIndex=(state.currentPage-1)*state.recordsPerPage;
+  const paginatedRecs=recs.slice(startIndex,startIndex+state.recordsPerPage);
+  
+  paginatedRecs.forEach(r=>{
     rows.innerHTML+=`
       <tr>
         <td>${r.nombre}</td>
@@ -326,6 +339,33 @@ function renderTable(){
       </tr>`;
   });
 }
+
+function renderPagination(){
+  const controls=document.getElementById("paginationControls");controls.innerHTML="";
+  let recs=state.records;
+  if(state.filter)recs=recs.filter(r=>r.nombre.toLowerCase().includes(state.filter)||r.articulo.toLowerCase().includes(state.filter));
+  
+  const totalPages=Math.ceil(recs.length/state.recordsPerPage);
+  if(totalPages<=1)return;
+
+  let buttonsHtml=`<button class="btn small ghost" onclick="changePage(${state.currentPage-1})" ${state.currentPage===1?'disabled':''}>Anterior</button>`;
+  for(let i=1;i<=totalPages;i++){
+    buttonsHtml+=`<button class="btn small ${i===state.currentPage?'':'ghost'}" onclick="changePage(${i})">${i}</button>`;
+  }
+  buttonsHtml+=`<button class="btn small ghost" onclick="changePage(${state.currentPage+1})" ${state.currentPage===totalPages?'disabled':''}>Siguiente</button>`;
+  controls.innerHTML=`<div class="toolbar" style="justify-content:center;gap:4px;">${buttonsHtml}</div>`;
+}
+
+window.changePage=function(page){
+  let recs=state.records;
+  if(state.filter)recs=recs.filter(r=>r.nombre.toLowerCase().includes(state.filter)||r.articulo.toLowerCase().includes(state.filter));
+  const totalPages=Math.ceil(recs.length/state.recordsPerPage);
+  if(page<1||page>totalPages)return;
+  state.currentPage=page;
+  renderTable();
+  renderPagination();
+};
+
 window.editRecord=function(id){
   const r=state.records.find(x=>x.id===id);if(!r)return;
   document.getElementById("nombre").value=r.nombre;
@@ -340,7 +380,13 @@ window.editRecord=function(id){
 document.getElementById("prevBtn").onclick=()=>{state.currentMonth--;if(state.currentMonth<0){state.currentMonth=11;state.currentYear--;}renderCalendar();}
 document.getElementById("nextBtn").onclick=()=>{state.currentMonth++;if(state.currentMonth>11){state.currentMonth=0;state.currentYear++;}renderCalendar();}
 document.getElementById("todayBtn").onclick=()=>{const d=new Date();state.currentMonth=d.getMonth();state.currentYear=d.getFullYear();renderCalendar();}
-document.getElementById("clearFiltersBtn").onclick=()=>{state.filter="";document.getElementById("search").value="";renderTable();}
+document.getElementById("clearFiltersBtn").onclick=()=>{
+  state.filter="";
+  document.getElementById("search").value="";
+  state.currentPage=1;
+  renderTable();
+  renderPagination();
+};
 
 /* PICKERS */
 const monthPicker=document.getElementById("monthPicker");
