@@ -15,6 +15,8 @@
     --accent-light: #3498db; /* Azul más claro para botones/interacción */
     --line: #e5e7eb; /* Líneas divisorias sutiles */
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave para elevación */
+    --error: #e74c3c; /* Color rojo para errores */
+    --error-bg: #fdf2f2; /* Fondo rojo claro para errores */
   }
 
   /* RESET Y BASE */
@@ -68,6 +70,21 @@
   input[type="color"]{padding:0.25rem;height:48px;}
   .row{display: flex; gap: 16px;} /* Para agrupar inputs en el formulario */
   .row > div {flex: 1;}
+
+  /* Estilos para errores */
+  .input-error {
+    border-color: var(--error) !important;
+    background-color: var(--error-bg) !important;
+  }
+  .error-message {
+    color: var(--error);
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  }
+  .error-message.show {
+    display: block;
+  }
 
   /* Botones - Dinámicos */
   .btn{border:none;background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;cursor:pointer;font-weight:600;transition:background 0.2s, transform 0.1s;}
@@ -187,6 +204,7 @@
               <option>Riveros Patricia Soledad</option>
               <option>Sosa Rita Cecilia</option>
             </select>
+            <div id="nombreError" class="error-message"></div>
           </div>
           <div>
             <label for="articulo">Artículo del Reglamento</label>
@@ -200,6 +218,7 @@
             <div>
               <label for="inicio">Fecha de inicio</label>
               <input id="inicio" type="date" required />
+              <div id="inicioError" class="error-message"></div>
             </div>
           </div>
           <div class="row">
@@ -286,6 +305,15 @@ function daysInMonth(m,y){return new Date(y,m+1,0).getDate();}
 function firstDay(m,y){return new Date(y,m,1).getDay();}
 function formatDate(d){if(!d)return"";const dt=new Date(d+"T00:00:00");return dt.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});}
 
+/* FUNCIÓN PARA VERIFICAR DUPLICADOS */
+function checkDuplicate(nombre, inicio, editingId = "") {
+  return state.records.some(record => 
+    record.nombre === nombre && 
+    record.inicio === inicio && 
+    record.id !== editingId
+  );
+}
+
 /* FIREBASE CRUD */
 function upsertRecord(obj){db.child(obj.id).set(obj);}
 function removeById(id){db.child(id).remove();} // Esta función ya no es llamada desde la tabla, pero se mantiene en el CRUD
@@ -310,18 +338,62 @@ function render(){renderCalendar();renderTable();renderPagination();}
 document.getElementById("form").addEventListener("submit",e=>{
   e.preventDefault();
   const id=document.getElementById("editingId").value||uuid();
+  const nombre=document.getElementById("nombre").value;
+  const articulo=document.getElementById("articulo").value;
+  const dias=parseInt(document.getElementById("dias").value);
+  const inicio=document.getElementById("inicio").value;
+  const color=document.getElementById("color").value;
+  
+  // Verificar duplicados
+  const isDuplicate = checkDuplicate(nombre, inicio, id);
+  
+  if (isDuplicate) {
+    // Mostrar errores visuales
+    document.getElementById("nombre").classList.add("input-error");
+    document.getElementById("inicio").classList.add("input-error");
+    document.getElementById("nombreError").textContent = "Este nombre ya tiene un registro en esta fecha";
+    document.getElementById("nombreError").classList.add("show");
+    document.getElementById("inicioError").textContent = "Esta fecha ya está registrada para esta persona";
+    document.getElementById("inicioError").classList.add("show");
+    return;
+  }
+  
+  // Limpiar errores si no hay duplicados
+  document.getElementById("nombre").classList.remove("input-error");
+  document.getElementById("inicio").classList.remove("input-error");
+  document.getElementById("nombreError").classList.remove("show");
+  document.getElementById("inicioError").classList.remove("show");
+
   const obj={
     id,
-    nombre:document.getElementById("nombre").value,
-    articulo:document.getElementById("articulo").value,
-    dias:parseInt(document.getElementById("dias").value),
-    inicio:document.getElementById("inicio").value,
-    color:document.getElementById("color").value
+    nombre,
+    articulo,
+    dias,
+    inicio,
+    color
   };
   upsertRecord(obj);
   e.target.reset();document.getElementById("editingId").value="";
 });
-document.getElementById("resetBtn").onclick=()=>{document.getElementById("form").reset();document.getElementById("editingId").value="";};
+document.getElementById("resetBtn").onclick=()=>{
+  document.getElementById("form").reset();
+  document.getElementById("editingId").value="";
+  // Limpiar errores al resetear
+  document.getElementById("nombre").classList.remove("input-error");
+  document.getElementById("inicio").classList.remove("input-error");
+  document.getElementById("nombreError").classList.remove("show");
+  document.getElementById("inicioError").classList.remove("show");
+};
+
+// Limpiar errores cuando el usuario modifique los campos
+document.getElementById("nombre").addEventListener("input", function() {
+  this.classList.remove("input-error");
+  document.getElementById("nombreError").classList.remove("show");
+});
+document.getElementById("inicio").addEventListener("input", function() {
+  this.classList.remove("input-error");
+  document.getElementById("inicioError").classList.remove("show");
+});
 
 /* SEARCH */
 document.getElementById("search").oninput=e=>{
@@ -488,6 +560,11 @@ window.editRecord=function(id){
   document.getElementById("inicio").value=r.inicio;
   document.getElementById("color").value=r.color;
   document.getElementById("editingId").value=r.id;
+  // Limpiar errores al editar
+  document.getElementById("nombre").classList.remove("input-error");
+  document.getElementById("inicio").classList.remove("input-error");
+  document.getElementById("nombreError").classList.remove("show");
+  document.getElementById("inicioError").classList.remove("show");
   // Desplazar la vista al formulario para mejor UX
   document.getElementById("form").scrollIntoView({behavior: "smooth", block: "start"});
 };
