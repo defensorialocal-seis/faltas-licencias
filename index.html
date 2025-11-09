@@ -4,19 +4,277 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Defensoría Registro Faltas</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
+  /* ===== ESTILOS PARA LA PANTALLA DE LOGIN (NUEVO) ===== */
+  #loginScreen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f4f7f9;
+    color: #1f2937;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    z-index: 1000;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    background: #ffffff;
+    border-radius: 1.3rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    min-height: 550px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .left-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #0f4c75 0%, #3498db 100%);
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .left-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.03)"/></svg>');
+    background-size: cover;
+  }
+
+  .brand-content {
+    color: #ffffff;
+    z-index: 2;
+    position: relative;
+    text-align: center;
+  }
+
+  .brand-title {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-subtitle {
+    font-size: 1.4rem;
+    color: #ffffff;
+    margin-bottom: 30px;
+    font-weight: 500;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .platform-description {
+    font-size: 1.1rem;
+    color: #ffffff;
+    line-height: 1.6;
+    margin-top: 20px;
+    opacity: 0.8;
+  }
+
+  .right-panel {
+    flex: 0.8;
+    background: #ffffff;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 1px solid #e5e7eb;
+  }
+
+  .access-content {
+    text-align: center;
+  }
+
+  .access-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #0f4c75 0%, #3498db 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .access-icon i {
+    font-size: 35px;
+    color: #ffffff;
+  }
+
+  .access-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+  }
+
+  .access-subtitle {
+    color: #64748b;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+  }
+
+  .btn-login {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 1.3rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #0f4c75 0%, #3498db 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .credit-section {
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .credit-title {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+  }
+
+  .developer {
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* Responsive para la pantalla de login */
+  @media (max-width: 1024px) {
+    .brand-title {
+      font-size: 2.4rem;
+    }
+    .brand-subtitle {
+      font-size: 1.2rem;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .brand-title {
+      font-size: 2.1rem;
+    }
+    .brand-subtitle {
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .login-container {
+      flex-direction: column;
+      max-width: 500px;
+    }
+    
+    .left-panel, .right-panel {
+      padding: 40px 30px;
+    }
+    
+    .right-panel {
+      border-left: none;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .brand-title {
+      font-size: 2.3rem;
+    }
+    
+    .brand-subtitle {
+      font-size: 1.3rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .brand-title {
+      font-size: 2rem;
+    }
+    .brand-subtitle {
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    #loginScreen {
+      padding: 10px;
+    }
+    
+    .left-panel, .right-panel {
+      padding: 30px 20px;
+    }
+    
+    .brand-title {
+      font-size: 1.8rem;
+    }
+    
+    .brand-subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .brand-title {
+      font-size: 1.6rem;
+    }
+    .brand-subtitle {
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .brand-title {
+      font-size: 1.4rem;
+    }
+    .brand-subtitle {
+      font-size: 0.85rem;
+    }
+  }
+
+  /* ===== ESTILOS ORIGINALES PARA EL DASHBOARD (SIN CAMBIOS) ===== */
   :root {
-    /* Nueva paleta de colores moderna e intuitiva */
-    --bg: #f4f7f9; /* Fondo muy claro, casi blanco */
-    --card: #ffffff; /* Fondo de tarjetas blanco */
-    --muted: #64748b; /* Texto secundario (slate) */
-    --text: #1f2937; /* Texto principal (gray-900) */
-    --accent: #0f4c75; /* Azul profundo moderno (Accent) */
-    --accent-light: #3498db; /* Azul más claro para botones/interacción */
-    --line: #e5e7eb; /* Líneas divisorias sutiles */
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave para elevación */
-    --error: #e74c3c; /* Color rojo para errores */
-    --error-bg: #fdf2f2; /* Fondo rojo claro para errores */
+    --bg: #f4f7f9;
+    --card: #ffffff;
+    --muted: #64748b;
+    --text: #1f2937;
+    --accent: #0f4c75;
+    --accent-light: #3498db;
+    --line: #e5e7eb;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --error: #e74c3c;
+    --error-bg: #fdf2f2;
   }
 
   /* RESET Y BASE */
@@ -26,7 +284,7 @@
   /* Pantalla login - Estilo Dinámico */
   #loginScreen{
     position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:linear-gradient(135deg, var(--accent), #3498db); /* Degradado vibrante */
+    background:linear-gradient(135deg, var(--accent), #3498db);
     color:#fff;z-index:1000;text-align:center;padding:20px;
     animation: fadeIn 1s ease-out;
   }
@@ -35,7 +293,7 @@
   #loginScreen h1{font-size: 2.5rem; margin-bottom: 5px; font-weight: 700;}
   #loginScreen h2{font-size: 1.5rem; margin-top: 0; font-weight: 400; opacity: 0.8;}
   #loginBtn{
-    background: #f1c40f; /* Color de contraste vibrante (Amarillo/Dorado) */
+    background: #f1c40f;
     color: var(--text);
     padding: 16px 40px;
     border-radius: 14px;
@@ -68,7 +326,7 @@
   input,select{width:100%;padding:14px 18px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);outline:none;font-size:16px;transition:border-color 0.2s;}
   input:focus,select:focus{border-color:var(--accent-light);box-shadow:0 0 0 2px rgba(52, 152, 219, 0.2);}
   input[type="color"]{padding:0.25rem;height:48px;}
-  .row{display: flex; gap: 16px;} /* Para agrupar inputs en el formulario */
+  .row{display: flex; gap: 16px;}
   .row > div {flex: 1;}
 
   /* Estilos para errores */
@@ -96,7 +354,7 @@
   .btn.ghost:hover:not(:disabled){background:#f1f5f9;}
   .btn.small{padding:8px 14px;border-radius:10px;font-size:13px}
   #logoutBtn {
-    background: #e74c3c; /* Rojo para 'Salir' */
+    background: #e74c3c;
     color: #fff;
     margin-left: 10px;
   }
@@ -140,8 +398,6 @@
   tbody tr{background:var(--card);border:1px solid var(--line);box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: box-shadow 0.2s;}
   tbody tr:hover{box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
   tbody tr td:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
-  
-  /* Ajuste para redondear la última columna visible (Acciones) */
   tbody tr td:last-child {
     border-top-right-radius:12px;
     border-bottom-right-radius:12px;
@@ -153,11 +409,41 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
 <body>
+  <!-- Pantalla de Login (Nuevo Estilo) -->
   <div id="loginScreen">
-    <h1>Registro de Inasistencias y Licencias</h1>
-    <button id="loginBtn">Ingresar</button>
+    <div class="login-container">
+      <!-- Panel izquierdo - Información -->
+      <div class="left-panel">
+        <div class="brand-content">
+          <h3 class="brand-title">Sistema Digital</h3>
+          <h2 class="brand-subtitle">Defensoría Civil y Comercial 6</h2>
+          <p class="platform-description">Registro de inasistencias y licencias del personal.</p>
+        </div>
+      </div>
+
+      <!-- Panel derecho - Acceso -->
+      <div class="right-panel">
+        <div class="access-content">
+          <div class="access-icon">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h2 class="access-title">Acceso al Sistema</h2>
+          <p class="access-subtitle">Personal autorizado</p>
+          
+          <button class="btn-login" id="loginBtn">
+            <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
+          </button>
+          
+          <div class="credit-section">
+            <div class="credit-title">Desarrollado por:</div>
+            <div class="developer">Rómulo Fioravante - Leg. 2481 - 2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Aplicación Principal (Dashboard Original - SIN CAMBIOS) -->
   <div id="app" style="display:none">
     <div class="container grid cols-2">
       <section class="card calendar">
@@ -261,8 +547,6 @@
   </div>
 
 <script>
-/* Funcionalidad de tema oscuro eliminada */
-
 /* LOGIN / LOGOUT */
 const loginScreen = document.getElementById('loginScreen');
 const app = document.getElementById('app');
@@ -282,7 +566,6 @@ function showLogin() {
 
 loginBtn.addEventListener('click', showApp);
 logoutBtn.addEventListener('click', showLogin);
-
 
 /* FIREBASE CONFIG */
 firebase.initializeApp({
@@ -316,7 +599,7 @@ function checkDuplicate(nombre, inicio, editingId = "") {
 
 /* FIREBASE CRUD */
 function upsertRecord(obj){db.child(obj.id).set(obj);}
-function removeById(id){db.child(id).remove();} // Esta función ya no es llamada desde la tabla, pero se mantiene en el CRUD
+function removeById(id){db.child(id).remove();}
 
 db.on("value",snap=>{
   state.records=Object.values(snap.val()||{});
@@ -440,7 +723,7 @@ function renderCalendar(){
     grid.appendChild(cell);
   });
   
-  // --- MODIFICACIÓN AQUÍ para la Leyenda ---
+  // Leyenda
   const legend=document.getElementById("legend");legend.innerHTML="";
   
   // 1. Filtrar los registros que tienen actividad en el mes actual
@@ -452,30 +735,25 @@ function renderCalendar(){
   
   // 3. Renderizar la leyenda solo con los registros filtrados
   Object.values(unique).forEach(r=>{
-    legend.innerHTML+=`<div class="item"><div class="dot" style="background:${r.color}"></div>${r.nombre}</div>`;
+    legend.innerHTML+=`<div class="item"><div class="dot" style="background:${r.color}</div>${r.nombre}</div>`;
   });
-  // --- FIN MODIFICACIÓN ---
 
-  renderTable(); // Re-render table when month changes
-  renderPagination(); // Re-render pagination when month changes
+  renderTable();
+  renderPagination();
 }
 
-/* TABLE & PAGINATION - MODIFICADO */
-
-// Función para filtrar registros por mes y año
+/* TABLE & PAGINATION */
 function filterRecordsByMonth(records, month, year) {
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
 
     return records.filter(r => {
-        // La fecha de inicio debe ser una cadena ISO 8601 (YYYY-MM-DD)
         if (!r.inicio) return false; 
         
         const start = new Date(r.inicio + "T00:00:00");
         const end = new Date(start);
         end.setDate(start.getDate() + r.dias - 1);
         
-        // El registro se incluye si su rango de fechas (start a end) se superpone con el mes seleccionado
         const overlaps = start <= lastDayOfMonth && end >= firstDayOfMonth;
         return overlaps;
     });
@@ -512,7 +790,7 @@ function renderTable(){
         <td>
           <button class="btn small secondary" onclick="editRecord('${r.id}')">✏️ Editar</button>
         </td>
-      </tr>`; // Se quita el botón Eliminar
+      </tr>`;
   });
 }
 
@@ -587,7 +865,7 @@ const yearPicker=document.getElementById("yearPicker");
 const monthNames=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 monthNames.forEach((m,i)=>monthPicker.innerHTML+=`<option value="${i}">${m}</option>`);
 for(let y=2020;y<=2035;y++)yearPicker.innerHTML+=`<option value="${y}" ${y === state.currentYear ? 'selected' : ''}>${y}</option>`;
-monthPicker.value = state.currentMonth; // Set initial value
+monthPicker.value = state.currentMonth;
 monthPicker.onchange=()=>{state.currentMonth=parseInt(monthPicker.value);renderCalendar();}
 yearPicker.onchange=()=>{state.currentYear=parseInt(yearPicker.value);renderCalendar();}
 
